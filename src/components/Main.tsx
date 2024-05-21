@@ -1,22 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
-import Form from "./Form";
-import { Button } from "./ui/button";
 import UploadAudio from "./UploadAudio";
 
 const Main = () => {
-  const [hasCopied, setHasCopied] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setHasCopied(false);
-    }, 4000);
-  }, [hasCopied]);
-
-  function handleCopy() {
-    setHasCopied(true);
-  }
-
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-4 md:px-6 py-12 md:py-24">
       <div className="max-w-2xl w-full space-y-6">

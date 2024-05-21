@@ -35,6 +35,7 @@ const AudioWaveform: React.FC = () => {
     if (typeof window !== 'undefined' && wavesurferRef.current && !wavesurferObj) {
       const WaveSurferInstance = WaveSurfer.create({
         container: wavesurferRef.current,
+        backend: 'MediaElement',
         autoCenter: true,
         cursorColor: "white",
         waveColor: "#00FF8E",
@@ -139,7 +140,7 @@ const AudioWaveform: React.FC = () => {
 
 
   // function to convert buffer to blob
-  function audioBufferToWav(buffer:any) {
+  function audioBufferToWav(buffer: any) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
     const bufferArr = new ArrayBuffer(length);
@@ -150,21 +151,21 @@ const AudioWaveform: React.FC = () => {
     let offset = 0;
     let pos = 0;
 
-    setUint32(0x46464952); 
+    setUint32(0x46464952);
     setUint32(length - 8);
-    setUint32(0x45564157); 
+    setUint32(0x45564157);
 
-    setUint32(0x20746d66); 
-    setUint32(16); 
-    setUint16(1); 
+    setUint32(0x20746d66);
+    setUint32(16);
+    setUint16(1);
     setUint16(numOfChan);
     setUint32(buffer.sampleRate);
-    setUint32(buffer.sampleRate * 2 * numOfChan); 
-    setUint16(numOfChan * 2); 
-    setUint16(16); 
+    setUint32(buffer.sampleRate * 2 * numOfChan);
+    setUint16(numOfChan * 2);
+    setUint16(16);
 
-    setUint32(0x61746164); 
-    setUint32(length - pos - 4); 
+    setUint32(0x61746164);
+    setUint32(length - pos - 4);
 
     for (i = 0; i < buffer.numberOfChannels; i++)
       channels.push(buffer.getChannelData(i));
@@ -172,23 +173,23 @@ const AudioWaveform: React.FC = () => {
     while (pos < length) {
       for (i = 0; i < numOfChan; i++) {
 
-        sample = Math.max(-1, Math.min(1, channels[i][offset])); 
+        sample = Math.max(-1, Math.min(1, channels[i][offset]));
         sample =
-          sample < 0 ? sample * 0x8000 : sample * 0x7fff; 
-        view.setInt16(pos, sample, true); 
+          sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        view.setInt16(pos, sample, true);
         pos += 2;
       }
-      offset++; 
+      offset++;
     }
 
     return new Blob([view], { type: "audio/wav" });
 
-    function setUint16(data:any) {
+    function setUint16(data: any) {
       view.setUint16(pos, data, true);
       pos += 2;
     }
 
-    function setUint32(data:any) {
+    function setUint32(data: any) {
       view.setUint32(pos, data, true);
       pos += 4;
     }
@@ -244,6 +245,34 @@ const AudioWaveform: React.FC = () => {
     }
   };
 
+  const handleDownload = () => {
+    if (wavesurferObj) {
+      const regionsList = regionsPlugin.regions;
+      const regionKeys = Object.keys(regionsList);
+      const firstRegion = regionsList[regionKeys[0]];
+
+      console.log("FIRST REGION: ", firstRegion);
+
+
+
+      const waveKeys = Object.keys(wavesurferObj);
+      const originalBuffer = wavesurferObj[waveKeys[4]];
+
+
+      if (originalBuffer) {
+        const wavBlob = audioBufferToWav(originalBuffer);
+        const url = URL.createObjectURL(wavBlob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'current-audio.wav';
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
+
   return (
     <section>
       <div ref={wavesurferRef} id='waveform' />
@@ -265,6 +294,9 @@ const AudioWaveform: React.FC = () => {
           <Button className='trim' onClick={handleTrim}>
             <FaCut />
             <span className="ml-1">Trim</span>
+          </Button>
+          <Button className='download' onClick={handleDownload}>
+            <span>Download</span>
           </Button>
         </div>
 
