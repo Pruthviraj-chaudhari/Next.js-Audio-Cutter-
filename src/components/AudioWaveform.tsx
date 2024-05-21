@@ -11,7 +11,6 @@ import { FaPause } from "react-icons/fa";
 import { MdOutlineReplay } from "react-icons/md";
 import { FaCut } from "react-icons/fa";
 import { Slider } from './ui/slider';
-import { AiOutlineMinusCircle, AiOutlinePlusCircle } from 'react-icons/ai';
 import { FaVolumeUp, FaVolumeDown } from "react-icons/fa";
 import { useRouter } from 'next/navigation';
 
@@ -48,18 +47,6 @@ const AudioWaveform: React.FC = () => {
           ZoomPlugin.create(),
         ]
       });
-
-      // Initialize the Regions plugin
-      // wsRegions = WaveSurferInstance.registerPlugin(RegionsPlugin.create());
-
-      // wsRegions.addRegion({
-      //   start: Math.floor(duration / 2) - Math.floor(duration) / 5,
-      //   end: Math.floor(duration / 2),
-      //   content: 'Resize me',
-      //   drag: true,
-      //   resize: true,
-      //   color: 'hsla(265, 40%, 86%, 0.4)',
-      // });
 
       setWavesurferObj(WaveSurferInstance);
     }
@@ -146,12 +133,13 @@ const AudioWaveform: React.FC = () => {
     setVolume(value[0]);
   };
 
-  const handleZoomSlider = (value: number[]) => {
-    setZoom(value[0]);
+  // const handleZoomSlider = (value: number[]) => {
+  //   setZoom(value[0]);
+  // };
 
-  };
 
-  function audioBufferToWav(buffer) {
+  // function to convert buffer to blob
+  function audioBufferToWav(buffer:any) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
     const bufferArr = new ArrayBuffer(length);
@@ -162,47 +150,45 @@ const AudioWaveform: React.FC = () => {
     let offset = 0;
     let pos = 0;
 
-    // Write WAVE header
-    setUint32(0x46464952); // "RIFF"
-    setUint32(length - 8); // file length - 8
-    setUint32(0x45564157); // "WAVE"
+    setUint32(0x46464952); 
+    setUint32(length - 8);
+    setUint32(0x45564157); 
 
-    setUint32(0x20746d66); // "fmt " chunk
-    setUint32(16); // length = 16
-    setUint16(1); // PCM (uncompressed)
+    setUint32(0x20746d66); 
+    setUint32(16); 
+    setUint16(1); 
     setUint16(numOfChan);
     setUint32(buffer.sampleRate);
-    setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
-    setUint16(numOfChan * 2); // block-align
-    setUint16(16); // 16-bit (hardcoded in this demo)
+    setUint32(buffer.sampleRate * 2 * numOfChan); 
+    setUint16(numOfChan * 2); 
+    setUint16(16); 
 
-    setUint32(0x61746164); // "data" - chunk
-    setUint32(length - pos - 4); // chunk length
+    setUint32(0x61746164); 
+    setUint32(length - pos - 4); 
 
-    // Interleave
     for (i = 0; i < buffer.numberOfChannels; i++)
       channels.push(buffer.getChannelData(i));
 
     while (pos < length) {
       for (i = 0; i < numOfChan; i++) {
-        // interleave channels
-        sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+
+        sample = Math.max(-1, Math.min(1, channels[i][offset])); 
         sample =
-          sample < 0 ? sample * 0x8000 : sample * 0x7fff; // scale to 16-bit signed int
-        view.setInt16(pos, sample, true); // write 16-bit sample
+          sample < 0 ? sample * 0x8000 : sample * 0x7fff; 
+        view.setInt16(pos, sample, true); 
         pos += 2;
       }
-      offset++; // next source sample
+      offset++; 
     }
 
     return new Blob([view], { type: "audio/wav" });
 
-    function setUint16(data) {
+    function setUint16(data:any) {
       view.setUint16(pos, data, true);
       pos += 2;
     }
 
-    function setUint32(data) {
+    function setUint32(data:any) {
       view.setUint32(pos, data, true);
       pos += 4;
     }
@@ -249,7 +235,6 @@ const AudioWaveform: React.FC = () => {
             // Load the Blob into WaveSurfer
             wavesurferObj.loadBlob(trimmedBlob);
 
-            // Remove the original region (optional)
             firstRegion.remove();
           }
         }
@@ -258,53 +243,6 @@ const AudioWaveform: React.FC = () => {
       }
     }
   };
-
-
-  // const handleTrim = async () => {
-  //   if (regionsPlugin && wavesurferObj) {
-  //     const regionsList = regionsPlugin.regions;
-  //     const regionKeys = Object.keys(regionsList);
-  //     if (regionKeys.length > 0) {
-  //       const firstRegion = regionsList[regionKeys[0]];
-  //       if (firstRegion) {
-  //         const start = firstRegion.start;
-  //         const end = firstRegion.end;
-
-  //         console.log(wavesurferObj);
-
-  //         // Access WebAudio buffer
-  //         const webAudioBackend = wavesurferObj.backend;
-  //         const originalBuffer = webAudioBackend.buffer;
-
-  //         if (originalBuffer) {
-  //           // Trim the buffer
-  //           const startSample = Math.floor(start * originalBuffer.sampleRate);
-  //           const endSample = Math.ceil(end * originalBuffer.sampleRate);
-  //           const trimmedBuffer = webAudioBackend.ac.createBuffer(
-  //             originalBuffer.numberOfChannels,
-  //             endSample - startSample,
-  //             originalBuffer.sampleRate
-  //           );
-
-  //           for (let i = 0; i < originalBuffer.numberOfChannels; i++) {
-  //             trimmedBuffer.copyToChannel(
-  //               originalBuffer.getChannelData(i).slice(startSample, endSample),
-  //               i
-  //             );
-  //           }
-
-  //           // Load the trimmed buffer into WaveSurfer
-  //           wavesurferObj.loadDecodedBuffer(trimmedBuffer);
-
-  //           // Remove the original region (optional)
-  //           firstRegion.remove();
-  //         }
-  //       }
-  //     } else {
-  //       console.warn('No regions found to trim.');
-  //     }
-  //   }
-  // };
 
   return (
     <section>
